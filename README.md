@@ -11,9 +11,7 @@
 
 <div dir="rtl">
 
-<picture>
-<img src="docs/banner.png" alt="PneumoAI Banner" width="100%">
-</picture>
+<img src="docs/demo.gif" alt="PneumoScan Demo" width="100%" style="border-radius:12px;">
 
 </div>
 
