@@ -25,11 +25,9 @@
 
 <div align="center">
 
-<a href="https://s41.uupload.ir/files/matgama/%D9%BE%D9%86%D9%88%D9%85%D9%88%D9%86%DB%8C%20%D9%85%D8%AF%D9%84/2026-07-04%2023-29-43@720p-res_5-pts.mp4?play">
-<img src="docs/sample_original.jpg" alt="Demo Video" width="400" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-<br>
-<strong>▶ کلیک کنید برای مشاهده ویدیو | Click to Watch Demo</strong>
-</a>
+<video src="Video/2026-07-04 23-29-43@720p-res_5-pts.mp4" controls width="640" style="border-radius:12px;">
+مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+</video>
 
 </div>
 
