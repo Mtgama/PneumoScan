@@ -1,0 +1,265 @@
+{% extends 'diagnosis/base.html' %}
+{% load static %}
+
+{% block title %}گزارش آموزش{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .model-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2.5rem;
+    }
+    .model-info-card {
+        background: white;
+        border-radius: var(--radius-xl);
+        padding: 1.25rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid #f1f5f9;
+        text-align: center;
+    }
+    .model-info-card .info-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--primary-500), var(--teal-500));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .model-info-card .info-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+    .stage-divider {
+        text-align: center;
+        margin: 2rem 0 1.5rem;
+        position: relative;
+    }
+    .stage-divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0; right: 0;
+        height: 1px;
+        background: #e2e8f0;
+    }
+    .stage-divider span {
+        background: #f8fafc;
+        padding: 0 1rem;
+        position: relative;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #64748b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section page-section">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{% url 'diagnosis:home' %}">خانه</a>
+            <span>←</span>
+            <span class="active">گزارش آموزش</span>
+        </div>
+
+        <h1 class="page-title">گزارش <span class="gradient-text">آموزش مدل</span></h1>
+        <p class="page-subtitle">روند آموزش و اعتبارسنجی مدل DenseNet121 در ۴۰ اپاک</p>
+
+        <!-- اطلاعات مدل -->
+        <div class="model-info-grid">
+            <div class="model-info-card">
+                <div class="info-value">DenseNet121</div>
+                <div class="info-label">معماری مدل</div>
+            </div>
+            <div class="model-info-card">
+                <div class="info-value">40</div>
+                <div class="info-label">تعداد اپاک</div>
+            </div>
+            <div class="model-info-card">
+                <div class="info-value">224×224</div>
+                <div class="info-label">اندازه ورودی</div>
+            </div>
+            <div class="model-info-card">
+                <div class="info-value">2 مرحله</div>
+                <div class="info-label">مرحله آموزش</div>
+            </div>
+            <div class="model-info-card">
+                <div class="info-value">Binary CE</div>
+                <div class="info-label">تابع هزینه</div>
+            </div>
+            <div class="model-info-card">
+                <div class="info-value">AdamW</div>
+                <div class="info-label">بهینه‌ساز</div>
+            </div>
+        </div>
+
+        <!-- تقسیم‌بندی مراحل -->
+        <div class="stage-divider"><span>مرحله ۱: آموزش سر طبقه‌بند (اپاک ۱-۱۵) —冻结 backbone</span></div>
+
+        <!-- نمودارهای دقت -->
+        <div class="charts-grid" style="margin-bottom: 2rem;">
+            <div class="chart-card animate-in">
+                <div class="chart-header">
+                    <h3>📈 دقت مدل (Accuracy)</h3>
+                    <span class="badge badge-blue">Accuracy</span>
+                </div>
+                <canvas id="accuracyChart"></canvas>
+            </div>
+            <div class="chart-card animate-in">
+                <div class="chart-header">
+                    <h3>📉 هزینه مدل (Loss)</h3>
+                    <span class="badge badge-rose">Loss</span>
+                </div>
+                <canvas id="lossChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stage-divider"><span>مرحله ۲: تنظیم دقیق (اپاک ۱۶-۴۰) — آزادسازی لایه‌های بالایی</span></div>
+
+        <!-- نمودارهای جداگانه -->
+        <div class="charts-grid">
+            <div class="chart-card animate-in">
+                <div class="chart-header">
+                    <h3>📈 دقت آموزش</h3>
+                    <span class="badge badge-blue">Train Accuracy</span>
+                </div>
+                <canvas id="trainAccChart"></canvas>
+            </div>
+            <div class="chart-card animate-in">
+                <div class="chart-header">
+                    <h3>📈 دقت اعتبارسنجی</h3>
+                    <span class="badge badge-teal">Val Accuracy</span>
+                </div>
+                <canvas id="valAccChart"></canvas>
+            </div>
+            <div class="chart-card animate-in">
+                <div class="chart-header">
+                    <h3>📉 هزینه آموزش</h3>
+                    <span class="badge badge-rose">Train Loss</span>
+                </div>
+                <canvas id="trainLossChart"></canvas>
+            </div>
+            <div class="chart-card animate-in">
+                <div class="chart-header">
+                    <h3>📉 هزینه اعتبارسنجی</h3>
+                    <span class="badge badge-amber">Val Loss</span>
+                </div>
+                <canvas id="valLossChart"></canvas>
+            </div>
+        </div>
+
+        <!-- جدول خلاصه -->
+        <div class="chart-card animate-in" style="margin-top: 2rem;">
+            <div class="chart-header">
+                <h3>📊 خلاصه عملکرد نهایی</h3>
+            </div>
+            <div style="padding: 1.5rem;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #e2e8f0;">
+                            <th style="text-align:right; padding:0.75rem; color:#64748b;">معیار</th>
+                            <th style="text-align:center; padding:0.75rem; color:#64748b;">مرحله ۱ (اپاک ۱۵)</th>
+                            <th style="text-align:center; padding:0.75rem; color:#64748b;">مرحله ۲ (اپاک ۴۰)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const trainingData = {{ training_data_json|safe }};
+    const epochs = trainingData.map(d => d.epoch);
+
+    const fontConfig = { family: "'Vazirmatn', sans-serif" };
+    const gridColor = '#f1f5f9';
+
+    function makeOptions(yLabel, suggestedMin, suggestedMax) {
+        return {
+            responsive: true,
+            plugins: {
+                legend: { labels: { font: fontConfig, usePointStyle: true, pointStyle: 'circle' } }
+            },
+            scales: {
+                x: { title: { display: true, text: 'اپاک', font: fontConfig }, ticks: { font: fontConfig, maxTicksLimit: 15 }, grid: { color: gridColor } },
+                y: { title: { display: true, text: yLabel, font: fontConfig }, ticks: { font: fontConfig }, grid: { color: gridColor }, suggestedMin: suggestedMin, suggestedMax: suggestedMax }
+            },
+            interaction: { intersect: false, mode: 'index' }
+        };
+    }
+
+    // --- Accuracy (combined) ---
+    new Chart(document.getElementById('accuracyChart'), {
+        type: 'line',
+        data: {
+            labels: epochs,
+            datasets: [
+                { label: 'دقت آموزش', data: trainingData.map(d => (d.trainAccuracy).toFixed(1)), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', tension: 0.3, fill: true, pointRadius: 2 },
+                { label: 'دقت اعتبارسنجی', data: trainingData.map(d => (d.valAccuracy).toFixed(1)), borderColor: '#14b8a6', backgroundColor: 'rgba(20,184,166,0.08)', tension: 0.3, fill: true, pointRadius: 2 }
+            ]
+        },
+        options: makeOptions('دقت (%)', 40, 100)
+    });
+
+    // --- Loss (combined) ---
+    new Chart(document.getElementById('lossChart'), {
+        type: 'line',
+        data: {
+            labels: epochs,
+            datasets: [
+                { label: 'هزینه آموزش', data: trainingData.map(d => d.trainLoss.toFixed(4)), borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.08)', tension: 0.3, fill: true, pointRadius: 2 },
+                { label: 'هزینه اعتبارسنجی', data: trainingData.map(d => d.valLoss.toFixed(4)), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)', tension: 0.3, fill: true, pointRadius: 2 }
+            ]
+        },
+        options: makeOptions('هزینه', 0, 0.8)
+    });
+
+    // --- Individual charts ---
+    new Chart(document.getElementById('trainAccChart'), {
+        type: 'line',
+        data: { labels: epochs, datasets: [{ label: 'دقت آموزش', data: trainingData.map(d => d.trainAccuracy.toFixed(1)), borderColor: '#3b82f6', tension: 0.3, fill: false, pointRadius: 2 }] },
+        options: makeOptions('دقت (%)', 40, 100)
+    });
+    new Chart(document.getElementById('valAccChart'), {
+        type: 'line',
+        data: { labels: epochs, datasets: [{ label: 'دقت اعتبارسنجی', data: trainingData.map(d => d.valAccuracy.toFixed(1)), borderColor: '#14b8a6', tension: 0.3, fill: false, pointRadius: 2 }] },
+        options: makeOptions('دقت (%)', 40, 100)
+    });
+    new Chart(document.getElementById('trainLossChart'), {
+        type: 'line',
+        data: { labels: epochs, datasets: [{ label: 'هزینه آموزش', data: trainingData.map(d => d.trainLoss.toFixed(4)), borderColor: '#f43f5e', tension: 0.3, fill: false, pointRadius: 2 }] },
+        options: makeOptions('هزینه', 0, 0.8)
+    });
+    new Chart(document.getElementById('valLossChart'), {
+        type: 'line',
+        data: { labels: epochs, datasets: [{ label: 'هزینه اعتبارسنجی', data: trainingData.map(d => d.valLoss.toFixed(4)), borderColor: '#f59e0b', tension: 0.3, fill: false, pointRadius: 2 }] },
+        options: makeOptions('هزینه', 0, 0.8)
+    });
+
+    // --- Summary table ---
+    var s1 = trainingData[14];
+    var s2 = trainingData[trainingData.length - 1];
+    var rows = [
+        ['دقت (Accuracy)', s1.trainAccuracy.toFixed(1) + '%', s2.trainAccuracy.toFixed(1) + '%'],
+        ['دقت اعتبارسنجی', s1.valAccuracy.toFixed(1) + '%', s2.valAccuracy.toFixed(1) + '%'],
+        ['هزینه آموزش', s1.trainLoss.toFixed(4), s2.trainLoss.toFixed(4)],
+        ['هزینه اعتبارسنجی', s1.valLoss.toFixed(4), s2.valLoss.toFixed(4)],
+    ];
+    var tbody = document.getElementById('summaryTable');
+    rows.forEach(function(r) {
+        var tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #f1f5f9';
+        tr.innerHTML = '<td style="padding:0.75rem;font-weight:600;">' + r[0] + '</td>' +
+                       '<td style="padding:0.75rem;text-align:center;">' + r[1] + '</td>' +
+                       '<td style="padding:0.75rem;text-align:center;color:#10b981;font-weight:700;">' + r[2] + '</td>';
+        tbody.appendChild(tr);
+    });
+</script>
+{% endblock %}

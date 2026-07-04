@@ -1,0 +1,137 @@
+{% extends 'diagnosis/base.html' %}
+{% load static %}
+
+{% block title %}خانه{% endblock %}
+
+{% block content %}
+<!-- بخش هیرو -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="container hero-content">
+        <div class="hero-badge">
+            <span class="pulse-dot"></span>
+            <span>سامانه آماده بهره‌برداری</span>
+        </div>
+        <h1 class="hero-title">
+            تشخیص هوشمند
+            <br>
+            <span class="gradient-text">ذات‌الریه</span>
+        </h1>
+        <p class="hero-description">
+            با استفاده از هوش مصنوعی و یادگیری عمیق، تصاویر رادیوگرافی قفسه سینه
+            را در کمترین زمان تحلیل کنید.
+        </p>
+        <a href="#upload" class="btn btn-primary btn-lg">شروع تشخیص</a>
+    </div>
+</section>
+
+<!-- بخش آپلود -->
+<section id="upload" class="section bg-light">
+    <div class="container">
+        <div class="section-header">
+            <h2>آپلود تصویر <span class="gradient-text">رادیوگرافی</span></h2>
+            <p>تصویر رادیوگرافی قفسه سینه را آپلود کنید تا سامانه هوشمند ما آن را تحلیل کند.</p>
+        </div>
+        
+        <!-- فرم آپلود -->
+        <div class="upload-card">
+            <form method="post" enctype="multipart/form-data" action="{% url 'diagnosis:api_predict' %}" id="upload-form">
+                {% csrf_token %}
+                
+                <!-- ناحیه Drag & Drop -->
+                <div id="drop-zone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <div class="upload-icon">📤</div>
+                        <p class="drop-zone-title">تصویر رادیوگرافی را اینجا بکشید و رها کنید</p>
+                        <p class="drop-zone-subtitle">یا برای انتخاب فایل کلیک کنید</p>
+                        <input type="file" name="image" id="file-input" accept="image/*" hidden>
+                    </div>
+                    
+                    <!-- پیش‌نمایش -->
+                    <div id="preview-container" class="preview-container" style="display: none;">
+                        <img id="preview-image" src="" alt="پیش‌نمایش">
+                        <button type="button" id="clear-btn" class="clear-btn">✕</button>
+                    </div>
+                </div>
+
+                <!-- فرمت‌های پشتیبانی شده -->
+                <div class="supported-formats">
+                    <span>فرمت‌های پشتیبانی شده:</span>
+                    <span class="format-badge">PNG</span>
+                    <span class="format-badge">JPG</span>
+                    <span class="format-badge">JPEG</span>
+                    <span class="format-badge">BMP</span>
+                    <span class="format-badge">DICOM</span>
+                </div>
+
+                <!-- تنظیم آستانه حساسیت -->
+                <div class="threshold-control" style="margin-top:1.5rem;padding:1rem 1.25rem;background:#f8fafc;border-radius:var(--radius-md);border:1px solid #e2e8f0;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <label style="font-size:0.85rem;font-weight:600;color:#374151;">آستانه حساسیت تشخیص</label>
+                        <span id="thresholdValue" style="font-size:0.9rem;font-weight:800;color:var(--primary-600);">0.50</span>
+                    </div>
+                    <input type="range" id="thresholdSlider" name="threshold" min="0.10" max="0.90" step="0.05" value="0.50"
+                           style="width:100%;accent-color:var(--primary-500);">
+                    <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#94a3b8;margin-top:0.25rem;">
+                        <span>حساسیت بالا (0.10)</span>
+                        <span>پیش‌فرض (0.50)</span>
+                        <span>دقیق‌تر (0.90)</span>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn btn-primary btn-block" disabled>
+                    شروع تحلیل هوشمند
+                </button>
+            </form>
+        </div>
+
+        <!-- انیمیشن بارگذاری -->
+        <div id="loading-overlay" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-icon">🧠</div>
+            </div>
+            <p class="loading-text">در حال تحلیل هوشمند...</p>
+            <p class="loading-subtext">مدل یادگیری عمیق در حال بررسی تصویر است</p>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- بخش ویژگی‌ها -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2>چرا <span class="gradient-text">PneumoAI</span>؟</h2>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon bg-blue">🧠</div>
+                <h3>یادگیری عمیق</h3>
+                <p>استفاده از شبکه‌های عصبی کانولوشنال پیشرفته</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon bg-amber">⚡</div>
+                <h3>سرعت بالا</h3>
+                <p>تشخیص در کمتر از ۳ ثانیه</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon bg-green">🛡️</div>
+                <h3>دقت بالای ۹۵٪</h3>
+                <p>آموزش با بیش از ۵۰۰۰ تصویر تأیید شده</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon bg-rose">❤️</div>
+                <h3>کمک به پزشکان</h3>
+                <p>ابزار کمکی برای تشخیص سریع‌تر و دقیق‌تر</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'diagnosis/js/upload.js' %}"></script>
+{% endblock %}

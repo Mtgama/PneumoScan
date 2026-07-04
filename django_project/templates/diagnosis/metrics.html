@@ -1,0 +1,79 @@
+{% extends 'diagnosis/base.html' %}
+{% load static %}
+
+{% block title %}عملکرد مدل{% endblock %}
+
+{% block content %}
+<section class="section page-section">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{% url 'diagnosis:home' %}">خانه</a>
+            <span>←</span>
+            <span class="active">عملکرد مدل</span>
+        </div>
+
+        <h1 class="page-title">معیارهای <span class="gradient-text">ارزیابی مدل</span></h1>
+        <p class="page-subtitle">بررسی عملکرد مدل یادگیری عمیق در تشخیص ذات‌الریه</p>
+
+        {% if metrics %}
+        <!-- کارت‌های معیارها -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon bg-blue">🎯</div>
+                <div class="metric-value text-blue">{{ metrics.accuracy|floatformat:1 }}%</div>
+                <div class="metric-label">دقت کلی (Accuracy)</div>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill bg-blue" style="width: {{ metrics.accuracy }}%"></div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon bg-teal">🔍</div>
+                <div class="metric-value text-teal">{{ metrics.precision|floatformat:1 }}%</div>
+                <div class="metric-label">صحت (Precision)</div>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill bg-teal" style="width: {{ metrics.precision }}%"></div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon bg-green">🔄</div>
+                <div class="metric-value text-green">{{ metrics.recall|floatformat:1 }}%</div>
+                <div class="metric-label">حساسیت (Recall)</div>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill bg-green" style="width: {{ metrics.recall }}%"></div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon bg-purple">✨</div>
+                <div class="metric-value text-purple">{{ metrics.f1_score|floatformat:1 }}%</div>
+                <div class="metric-label">معیار F1</div>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill bg-purple" style="width: {{ metrics.f1_score }}%"></div>
+                </div>
+            </div>
+            {% if metrics.roc_auc %}
+            <div class="metric-card">
+                <div class="metric-icon bg-amber">📈</div>
+                <div class="metric-value text-amber">{{ metrics.roc_auc|floatformat:1 }}%</div>
+                <div class="metric-label">ROC-AUC</div>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill bg-amber" style="width: {{ metrics.roc_auc }}%"></div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ماتریس درهم‌ریختگی -->
+        {% if metrics.confusion_matrix_image %}
+        <div class="image-card mx-auto" style="max-width: 500px; margin-top: 2rem;">
+            <div class="image-card-header">
+                <h3>📊 ماتریس درهم‌ریختگی</h3>
+            </div>
+            <div class="image-card-body">
+                <img src="{{ metrics.confusion_matrix_image.url }}" alt="ماتریس درهم‌ریختگی" class="zoomable">
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

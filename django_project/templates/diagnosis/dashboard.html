@@ -1,0 +1,275 @@
+{% extends 'diagnosis/base.html' %}
+{% load static %}
+
+{% block title %}داشبورد{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: white;
+        border-radius: var(--radius-xl);
+        padding: 1.25rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid #f1f5f9;
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 900;
+        line-height: 1.2;
+    }
+    .stat-label {
+        font-size: 0.78rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+    .text-blue { color: var(--primary-600); }
+    .text-red { color: #ef4444; }
+    .text-green { color: #10b981; }
+    .text-amber { color: #f59e0b; }
+    .text-purple { color: #8b5cf6; }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    .history-table th {
+        background: #f8fafc;
+        padding: 0.75rem 1rem;
+        text-align: right;
+        font-weight: 700;
+        color: #64748b;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 0.8rem;
+    }
+    .history-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .history-table tr:hover td {
+        background: #f8fafc;
+    }
+    .badge-pneumonia {
+        background: #fef2f2;
+        color: #dc2626;
+        padding: 3px 10px;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .badge-normal {
+        background: #ecfdf5;
+        color: #059669;
+        padding: 3px 10px;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+    }
+    .pagination button {
+        padding: 6px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        font-family: var(--font-main);
+        font-size: 0.8rem;
+        transition: all 0.2s;
+    }
+    .pagination button:hover { background: var(--primary-50); border-color: var(--primary-500); }
+    .pagination button.active { background: var(--primary-500); color: white; border-color: var(--primary-500); }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section page-section">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{% url 'diagnosis:home' %}">خانه</a>
+            <span>←</span>
+            <span class="active">داشبورد</span>
+        </div>
+
+        <h1 class="page-title">داشبورد <span class="gradient-text">آماری</span></h1>
+        <p class="page-subtitle">آمار کلی پیش‌بینی‌ها و تاریخچه تشخیص‌ها</p>
+
+        <!-- کارت‌های آمار -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card animate-in">
+                <div class="stat-value text-blue" id="statTotal">-</div>
+                <div class="stat-label">کل پیش‌بینی‌ها</div>
+            </div>
+            <div class="stat-card animate-in">
+                <div class="stat-value text-red" id="statPneumonia">-</div>
+                <div class="stat-label">ذات‌الریه</div>
+            </div>
+            <div class="stat-card animate-in">
+                <div class="stat-value text-green" id="statNormal">-</div>
+                <div class="stat-label">سالم</div>
+            </div>
+            <div class="stat-card animate-in">
+                <div class="stat-value text-amber" id="statRate">-</div>
+                <div class="stat-label">درصد ذات‌الریه</div>
+            </div>
+            <div class="stat-card animate-in">
+                <div class="stat-value text-purple" id="statAvgConf">-</div>
+                <div class="stat-label">میانگین اطمینان</div>
+            </div>
+            <div class="stat-card animate-in">
+                <div class="stat-value text-blue" id="statAvgTime">-</div>
+                <div class="stat-label">میانگین زمان (ms)</div>
+            </div>
+        </div>
+
+        <!-- نمودار روزانه -->
+        <div class="chart-card animate-in" style="margin-bottom:2rem;">
+            <div class="chart-header">
+                <h3>📈 نمودار روزانه (۳۰ روز اخیر)</h3>
+            </div>
+            <canvas id="dailyChart" style="padding:1rem;"></canvas>
+        </div>
+
+        <!-- جدول تاریخچه -->
+        <div class="chart-card animate-in">
+            <div class="chart-header">
+                <h3>📋 تاریخچه پیش‌بینی‌ها</h3>
+                <span class="badge badge-blue" id="historyCount">0 رکورد</span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>تاریخ</th>
+                            <th>نتیجه</th>
+                            <th>اطمینان</th>
+                            <th>زمان پردازش</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:2rem;">در حال بارگذاری...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    // Load stats
+    fetch('/api/dashboard-stats/')
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('statTotal').textContent = d.total;
+            document.getElementById('statPneumonia').textContent = d.pneumonia;
+            document.getElementById('statNormal').textContent = d.normal;
+            document.getElementById('statRate').textContent = d.pneumoniaRate + '%';
+            document.getElementById('statAvgConf').textContent = d.avgConfidence + '%';
+            document.getElementById('statAvgTime').textContent = d.avgProcessingTime;
+        });
+
+    // Load daily chart
+    fetch('/api/daily-stats/')
+        .then(r => r.json())
+        .then(data => {
+            var labels = data.map(d => d.date.slice(5));
+            new Chart(document.getElementById('dailyChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'ذات\u200cالریه', data: data.map(d => d.pneumonia), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 4 },
+                        { label: 'سالم', data: data.map(d => d.normal), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { font: { family: "'Vazirmatn',sans-serif" } } } },
+                    scales: {
+                        x: { stacked: true, ticks: { font: { family: "'Vazirmatn',sans-serif" }, maxTicksLimit: 15 }, grid: { display: false } },
+                        y: { stacked: true, ticks: { font: { family: "'Vazirmatn',sans-serif" }, stepSize: 1 }, grid: { color: '#f1f5f9' }, title: { display: true, text: 'تعداد', font: { family: "'Vazirmatn',sans-serif" } } }
+                    }
+                }
+            });
+        });
+
+    // Load history
+    var currentPage = 1;
+    function loadHistory(page) {
+        fetch('/api/history/?page=' + page)
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('historyCount').textContent = d.total + ' رکورد';
+                var tbody = document.getElementById('historyBody');
+                if (d.results.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:2rem;">هنوز پیش‌بینی ثبت نشده است</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                d.results.forEach(function(r, i) {
+                    var tr = document.createElement('tr');
+                    var badge = r.label === 'PNEUMONIA' ? '<span class="badge-pneumonia">ذات\u200cالریه</span>' : '<span class="badge-normal">سالم</span>';
+                    var date = new Date(r.createdAt);
+                    var dateStr = date.toLocaleDateString('fa-IR') + ' ' + date.toLocaleTimeString('fa-IR', {hour:'2-digit',minute:'2-digit'});
+                    tr.innerHTML =
+                        '<td style="color:#94a3b8;">' + ((d.page - 1) * d.pageSize + i + 1) + '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td>' + badge + '</td>' +
+                        '<td><strong>' + r.confidence.toFixed(1) + '%</strong></td>' +
+                        '<td>' + r.processingTime + ' ms</td>';
+                    tbody.appendChild(tr);
+                });
+
+                // Pagination
+                var pag = document.getElementById('pagination');
+                pag.innerHTML = '';
+                if (d.totalPages > 1) {
+                    var prev = document.createElement('button');
+                    prev.textContent = '← قبلی';
+                    prev.disabled = d.page <= 1;
+                    prev.onclick = function() { currentPage--; loadHistory(currentPage); };
+                    pag.appendChild(prev);
+
+                    for (var p = 1; p <= d.totalPages; p++) {
+                        var btn = document.createElement('button');
+                        btn.textContent = p;
+                        btn.className = p === d.page ? 'active' : '';
+                        btn.onclick = (function(pg) { return function() { currentPage = pg; loadHistory(pg); }; })(p);
+                        pag.appendChild(btn);
+                    }
+
+                    var next = document.createElement('button');
+                    next.textContent = 'بعدی →';
+                    next.disabled = d.page >= d.totalPages;
+                    next.onclick = function() { currentPage++; loadHistory(currentPage); };
+                    pag.appendChild(next);
+                }
+            })
+            .catch(function(err) {
+                document.getElementById('historyBody').innerHTML =
+                    '<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:2rem;">خطا در بارگذاری تاریخچه</td></tr>';
+            });
+    }
+    loadHistory(1);
+})();
+</script>
+{% endblock %}

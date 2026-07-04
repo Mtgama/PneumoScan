@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}سامانه هوشمند تشخیص ذات‌الریه{% endblock %} | PneumoAI</title>
+    
+    <!-- فونت وزیرمتن -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- استایل‌ها -->
+    <link rel="stylesheet" href="{% static 'diagnosis/css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- نوار ناوبری -->
+    <nav id="navbar" class="navbar">
+        <div class="container navbar-content">
+            <a href="{% url 'diagnosis:home' %}" class="navbar-brand">
+                <div class="navbar-logo">🫁</div>
+                <div>
+                    <h1 class="navbar-title">PneumoAI</h1>
+                    <p class="navbar-subtitle">سامانه هوشمند تشخیص ذات‌الریه</p>
+                </div>
+            </a>
+            <div class="navbar-links">
+                <a href="{% url 'diagnosis:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">خانه</a>
+                <a href="{% url 'diagnosis:results' %}" class="nav-link {% if request.resolver_match.url_name == 'results' %}active{% endif %}">نتایج تشخیص</a>
+                <a href="{% url 'diagnosis:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">داشبورد</a>
+                <a href="{% url 'diagnosis:metrics' %}" class="nav-link {% if request.resolver_match.url_name == 'metrics' %}active{% endif %}">عملکرد مدل</a>
+                <a href="{% url 'diagnosis:training' %}" class="nav-link {% if request.resolver_match.url_name == 'training' %}active{% endif %}">گزارش آموزش</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- محتوای اصلی -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- فوتر -->
+    <footer class="footer">
+        <div class="container">
+            <p>© {{ current_year }} PneumoAI - تمامی حقوق محفوظ است.</p>
+        </div>
+    </footer>
+
+    <!-- اسکریپت‌ها -->
+    <script src="{% static 'diagnosis/js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

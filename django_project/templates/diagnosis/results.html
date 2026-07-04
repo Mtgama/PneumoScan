@@ -1,0 +1,151 @@
+{% extends 'diagnosis/base.html' %}
+{% load static %}
+
+{% block title %}نتایج تشخیص{% endblock %}
+
+{% block content %}
+<section class="section page-section">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{% url 'diagnosis:home' %}">خانه</a>
+            <span>←</span>
+            <span class="active">نتایج تشخیص</span>
+        </div>
+
+        <h1 class="page-title">نتایج <span class="gradient-text">تشخیص هوشمند</span></h1>
+
+        <div id="result-banner"></div>
+
+        <!-- تصاویر تشخیص -->
+        <div id="result-images"></div>
+
+        <!-- نمودارهای ارزیابی مدل -->
+        <div id="model-charts-section"></div>
+
+        <!-- حالت بدون نتیجه -->
+        <div id="empty-state" class="empty-state" style="display:none;">
+            <div class="empty-icon">📋</div>
+            <h3>هنوز تصویری تحلیل نشده است</h3>
+            <p>برای دریافت نتایج، ابتدا یک تصویر رادیوگرافی آپلود کنید.</p>
+            <a href="{% url 'diagnosis:home' %}#upload" class="btn btn-primary">آپلود تصویر</a>
+        </div>
+
+        <div class="medical-warning">
+            <span class="warning-icon">⚠️</span>
+            <div>
+                <h4>توجه مهم</h4>
+                <p>
+                    این سامانه صرفاً یک ابزار کمکی تشخیصی است و جایگزین نظر پزشک متخصص نمی‌باشد.
+                    تصمیم‌گیری نهایی درمانی باید بر اساس ارزیابی بالینی کامل انجام گیرد.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var raw = sessionStorage.getItem('prediction_result');
+    if (!raw) {
+        document.getElementById('empty-state').style.display = 'block';
+        return;
+    }
+
+    var data;
+    try { data = JSON.parse(raw); } catch(e) {
+        document.getElementById('empty-state').style.display = 'block';
+        return;
+    }
+
+    /* ---- Result Banner ---- */
+    var isPneumonia = data.label === 'PNEUMONIA';
+    var bannerClass = isPneumonia ? 'result-positive' : 'result-negative';
+    var icon = isPneumonia ? '⚠️' : '✅';
+    var title = isPneumonia ? 'تشخیص ذات\u200cالریه' : 'سالم - بدون ذات\u200cالریه';
+    var desc = isPneumonia
+        ? 'مدل هوش مصنوعی نشانه\u200cهای ذات\u200cالریه را شناسایی کرده است.'
+        : 'مدل هوش مصنوعی نشانه\u200cای از ذات\u200cالریه شناسایی نکرده است.';
+
+    document.getElementById('result-banner').innerHTML =
+        '<div class="result-banner ' + bannerClass + '">' +
+            '<div class="result-banner-content">' +
+                '<div class="result-icon">' + icon + '</div>' +
+                '<div class="result-info">' +
+                    '<h2>' + title + '</h2>' +
+                    '<p>' + desc + '</p>' +
+                    (data.threshold ? '<p style="font-size:0.8rem;color:#94a3b8;margin-top:0.25rem;">آستانه حساسیت: ' + Number(data.threshold).toFixed(2) + '</p>' : '') +
+                '</div>' +
+                '<div class="confidence-circle">' +
+                    '<span class="confidence-value">' + Number(data.confidence).toFixed(1) + '%</span>' +
+                    '<span class="confidence-label">اطمینان</span>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+    /* ---- 3 Detection Images ---- */
+    var imagesHtml =
+        '<h2 style="margin:2rem 0 1rem;font-size:1.3rem;font-weight:800;color:#1e293b;">تصاویر تحلیل</h2>' +
+        '<div class="results-grid">' +
+            '<div class="image-card animate-in">' +
+                '<div class="image-card-header"><h3>🖼️ تصویر اصلی</h3><span class="badge badge-gray">ورودی</span></div>' +
+                '<div class="image-card-body"><img src="' + data.originalImage + '" alt="تصویر اصلی" class="zoomable"></div>' +
+            '</div>' +
+            '<div class="image-card animate-in">' +
+                '<div class="image-card-header"><h3>🔥 نقشه حرارتی</h3><span class="badge badge-orange">Grad-CAM</span></div>' +
+                '<div class="image-card-body"><img src="' + data.heatmapImage + '" alt="نقشه حرارتی" class="zoomable"></div>' +
+            '</div>' +
+            '<div class="image-card animate-in">' +
+                '<div class="image-card-header"><h3>🎯 ناحیه تشخیص</h3><span class="badge badge-green">باکس</span></div>' +
+                '<div class="image-card-body"><img src="' + data.bboxImage + '" alt="ناحیه تشخیص" class="zoomable"></div>' +
+            '</div>' +
+        '</div>';
+    document.getElementById('result-images').innerHTML = imagesHtml;
+
+    /* ---- Model Evaluation Charts ---- */
+    var charts = data.modelCharts || {};
+    var chartKeys = [
+        { key: 'accuracyGauge',     title: 'دقت کلی مدل',    badge: ' Accuracy',     badgeClass: 'badge-green' },
+        { key: 'confusionMatrix',   title: 'ماتریس درهم\u200cریختگی', badge: 'Confusion Matrix', badgeClass: 'badge-blue' },
+        { key: 'rocCurve',          title: 'منحنی ROC',       badge: 'ROC Curve',     badgeClass: 'badge-purple' },
+        { key: 'precisionRecallCurve', title: 'منحنی Precision-Recall', badge: 'PR Curve', badgeClass: 'badge-orange' },
+    ];
+
+    var hasCharts = chartKeys.some(function(c) { return charts[c.key]; });
+    if (hasCharts) {
+        var chartsHtml =
+            '<h2 style="margin:3rem 0 1rem;font-size:1.3rem;font-weight:800;color:#1e293b;">نمودارهای ارزیابی مدل</h2>' +
+            '<p style="color:#64748b;margin-bottom:1.5rem;font-size:0.9rem;">این نمودارها یکبار بر اساس عملکرد مدل تولید شده‌اند.</p>' +
+            '<div class="results-grid">';
+
+        chartKeys.forEach(function(c) {
+            if (charts[c.key]) {
+                chartsHtml +=
+                    '<div class="image-card animate-in">' +
+                        '<div class="image-card-header"><h3>' + c.title + '</h3><span class="badge ' + c.badgeClass + '">' + c.badge + '</span></div>' +
+                        '<div class="image-card-body"><img src="' + charts[c.key] + '" alt="' + c.title + '" class="zoomable"></div>' +
+                    '</div>';
+            }
+        });
+
+        chartsHtml += '</div>';
+        document.getElementById('model-charts-section').innerHTML = chartsHtml;
+    }
+
+    /* ---- Re-attach zoom listeners ---- */
+    document.querySelectorAll('.zoomable').forEach(function(img) {
+        img.addEventListener('click', function() {
+            var overlay = document.createElement('div');
+            overlay.className = 'image-zoom-overlay';
+            var zoomedImg = document.createElement('img');
+            zoomedImg.src = this.src;
+            zoomedImg.alt = this.alt;
+            overlay.appendChild(zoomedImg);
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', function() { overlay.remove(); });
+        });
+    });
+})();
+</script>
+{% endblock %}
