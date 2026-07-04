@@ -25,9 +25,7 @@
 
 <div align="center">
 
-<video src="Video/2026-07-04 23-29-43@720p-res_5-pts.mp4" controls width="640" style="border-radius:12px;">
-مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
-</video>
+![Demo](docs/demo.gif)
 
 </div>
 
