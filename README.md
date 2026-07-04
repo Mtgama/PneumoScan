@@ -89,6 +89,21 @@ python manage.py runserver
 
 سایت روی `http://127.0.0.1:8000` اجرا می‌شود.
 
+### دانلود وزن‌های مدل
+
+فایل وزن‌های مدل آموزش‌دیده در ریپازیتوری قرار ندارد (به خاطر حجم بالا). آن را از لینک زیر دانلود کرده و در روت پروژه قرار دهید:
+
+> **[دانلود مدل (bestmodelfinalhamine.keras)](https://s25.uupload.ir/files/matgama/%D9%BE%D9%86%D9%88%D9%85%D9%88%D9%86%DB%8C%20%D9%85%D8%AF%D9%84/pnumonia_project.zip)**
+
+پس از دانلود و اکسترact کردن، فایل `bestmodelfinalhamine.keras` را در پوشه اصلی پروژه قرار دهید:
+
+```
+PneumoScan/
+├── bestmodelfinalhamine.keras   ← اینجا قرار دهید
+├── manage.py
+├── ...
+```
+
 ### ساختار پروژه
 
 ```
@@ -221,6 +236,21 @@ python manage.py runserver
 ```
 
 The site will be available at `http://127.0.0.1:8000`.
+
+### Download Model Weights
+
+The trained model weights are not included in the repository (due to file size). Download them from the link below and place them in the project root:
+
+> **[Download Model (bestmodelfinalhamine.keras)](https://s25.uupload.ir/files/matgama/%D9%BE%D9%86%D9%88%D9%85%D9%88%D9%86%DB%8C%20%D9%85%D8%AF%D9%84/pnumonia_project.zip)**
+
+After downloading and extracting, place `bestmodelfinalhamine.keras` in the project root:
+
+```
+PneumoScan/
+├── bestmodelfinalhamine.keras   ← place here
+├── manage.py
+├── ...
+```
 
 ### Project Structure
 
