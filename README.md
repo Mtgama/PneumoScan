@@ -2,6 +2,8 @@
 
 # PneumoScan 🫁
 
+[**🇮🇷 فارسی**](#-فارسی) | [**🇬🇧 English**](#-english)
+
 ### سامانه هوشمند تشخیص ذات‌الریه | AI-Powered Pneumonia Detection
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
